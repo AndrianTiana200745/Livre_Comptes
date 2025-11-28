@@ -1,0 +1,67 @@
+QWidget {
+    background-color: #f4f6f9;
+    font-family: Arial;
+    font-size: 14px;
+}
+
+/* TITRES */
+QLabel#title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* TABLE */
+QTableWidget {
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+}
+
+QHeaderView::section {
+    background: #2c3e50;
+    color: white;
+    padding: 5px;
+    border: none;
+}
+
+/* INPUT */
+QLineEdit, QComboBox, QDateEdit, QSpinBox {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 5px;
+    background: white;
+}
+
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
+    border: 1px solid #2980b9;
+}
+
+/* BUTTON */
+QPushButton {
+    background-color: #3498db;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: white;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #2980b9;
+}
+
+QPushButton:pressed {
+    background-color: #1f6391;
+}
+
+/* DANGER */
+QPushButton#deleteButton {
+    background-color: #e74c3c;
+}
+
+QPushButton#deleteButton:hover {
+    background-color: #c0392b;
+}
+
