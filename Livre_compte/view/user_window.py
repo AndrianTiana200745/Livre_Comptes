@@ -3,7 +3,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QLabel, QPushButton, QLineEdit, QMessageBox, QComboBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QRegularExpression
+from PyQt6.QtGui import QRegularExpressionValidator
 
 from Livre_compte.controller.user_controller import UserController
 
@@ -16,7 +17,6 @@ class UserWindow(QWidget):
         self.setMinimumSize(700, 500)
 
         self.controller = UserController()
-
         layout = QVBoxLayout()
 
         # Title
@@ -29,9 +29,15 @@ class UserWindow(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Nom", "Prénom", "Identifiant", "Téléphone", "Adresse", "Rôle"
         ])
-        self.table.setColumnHidden(0, True)  # ID invisible
+        self.table.setColumnHidden(0, True)
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table)
+
+        # =========================
+        # REGEX VALIDATOR TELEPHONE
+        # =========================
+        phone_regex = QRegularExpression(r"^\+2613\d{8}$")
+        self.phone_validator = QRegularExpressionValidator(phone_regex)
 
         # FORMULAIRE AJOUT
         form_add = QHBoxLayout()
@@ -50,7 +56,8 @@ class UserWindow(QWidget):
         form_add.addWidget(self.in_mdp)
 
         self.in_tel = QLineEdit()
-        self.in_tel.setPlaceholderText("Téléphone")
+        self.in_tel.setPlaceholderText("+2613XXXXXXXX")
+        self.in_tel.setValidator(self.phone_validator)
         form_add.addWidget(self.in_tel)
 
         self.in_addr = QLineEdit()
@@ -79,7 +86,8 @@ class UserWindow(QWidget):
         form_mod.addWidget(self.mod_prenom)
 
         self.mod_tel = QLineEdit()
-        self.mod_tel.setPlaceholderText("Téléphone")
+        self.mod_tel.setPlaceholderText("+2613XXXXXXXX")
+        self.mod_tel.setValidator(self.phone_validator)
         form_mod.addWidget(self.mod_tel)
 
         self.mod_addr = QLineEdit()
@@ -96,7 +104,7 @@ class UserWindow(QWidget):
 
         layout.addLayout(form_mod)
 
-        # Delete button
+        # Delete
         btn_delete = QPushButton("Supprimer utilisateur sélectionné")
         btn_delete.clicked.connect(self.delete_user)
         layout.addWidget(btn_delete)
@@ -105,11 +113,8 @@ class UserWindow(QWidget):
         self.load_users()
 
     # -------------------------------------------------------
-    # Load users
-    # -------------------------------------------------------
     def load_users(self):
         from Livre_compte.database.db import get_connection
-
         self.table.setRowCount(0)
 
         with get_connection() as conn:
@@ -120,7 +125,6 @@ class UserWindow(QWidget):
             for row in rows:
                 r = self.table.rowCount()
                 self.table.insertRow(r)
-
                 self.table.setItem(r, 0, QTableWidgetItem(str(row["id"])))
                 self.table.setItem(r, 1, QTableWidgetItem(row["nom"]))
                 self.table.setItem(r, 2, QTableWidgetItem(row["prenom"]))
@@ -129,8 +133,6 @@ class UserWindow(QWidget):
                 self.table.setItem(r, 5, QTableWidgetItem(row["adresse"]))
                 self.table.setItem(r, 6, QTableWidgetItem(row["role"]))
 
-    # -------------------------------------------------------
-    # Add user
     # -------------------------------------------------------
     def add_user(self):
         nom = self.in_nom.text().strip()
@@ -144,21 +146,29 @@ class UserWindow(QWidget):
             QMessageBox.warning(self, "Erreur", "Nom, prénom et mot de passe obligatoires.")
             return
 
+        if not self.phone_validator.regularExpression().match(tel).hasMatch():
+            QMessageBox.warning(
+                self,
+                "Erreur",
+                "Numéro invalide.\nFormat requis : +2613XXXXXXXX"
+            )
+            return
+
         identifiant = self.controller.register(nom, prenom, mdp, tel, addr, role)
 
-        QMessageBox.information(self, "Succès",
-                                f"Utilisateur ajouté.\nIdentifiant généré : {identifiant}")
+        QMessageBox.information(
+            self,
+            "Succès",
+            f"Utilisateur ajouté.\nIdentifiant généré : {identifiant}"
+        )
 
         self.in_nom.clear()
         self.in_prenom.clear()
         self.in_mdp.clear()
         self.in_tel.clear()
         self.in_addr.clear()
-
         self.load_users()
 
-    # -------------------------------------------------------
-    # Modify user
     # -------------------------------------------------------
     def modify_user(self):
         row = self.table.currentRow()
@@ -169,23 +179,23 @@ class UserWindow(QWidget):
         user_id = int(self.table.item(row, 0).text())
         role = self.table.item(row, 6).text()
 
-        if role == "admin" and self.mod_role.currentText() == "user":
-            confirm = QMessageBox.question(
-                self, "Confirmer",
-                "Voulez-vous rétrograder cet admin en utilisateur ?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        tel_input = self.mod_tel.text().strip()
+        tel = tel_input or self.table.item(row, 4).text()
+
+        if tel_input and not self.phone_validator.regularExpression().match(tel_input).hasMatch():
+            QMessageBox.warning(
+                self,
+                "Erreur",
+                "Numéro invalide.\nFormat requis : +2613XXXXXXXX"
             )
-            if confirm != QMessageBox.StandardButton.Yes:
-                return
+            return
 
         nom = self.mod_nom.text().strip() or self.table.item(row, 1).text()
         prenom = self.mod_prenom.text().strip() or self.table.item(row, 2).text()
-        tel = self.mod_tel.text().strip() or self.table.item(row, 4).text()
         addr = self.mod_addr.text().strip() or self.table.item(row, 5).text()
         new_role = self.mod_role.currentText()
 
         from Livre_compte.database.db import get_connection
-
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -204,8 +214,6 @@ class UserWindow(QWidget):
         self.mod_addr.clear()
 
     # -------------------------------------------------------
-    # Delete user
-    # -------------------------------------------------------
     def delete_user(self):
         row = self.table.currentRow()
         if row < 0:
@@ -220,7 +228,9 @@ class UserWindow(QWidget):
             return
 
         confirm = QMessageBox.question(
-            self, "Confirmer", "Supprimer cet utilisateur ?",
+            self,
+            "Confirmer",
+            "Supprimer cet utilisateur ?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
@@ -228,7 +238,6 @@ class UserWindow(QWidget):
             return
 
         from Livre_compte.database.db import get_connection
-
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM utilisateur WHERE id=?", (user_id,))

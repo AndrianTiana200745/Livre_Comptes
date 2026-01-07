@@ -12,7 +12,7 @@ def resource_path(relative_path: str):
 def initialize_database():
     from Livre_compte.database.db import get_connection
     
-    sql_path = resource_path("Livre_compte/database/init_db.sql")
+    sql_path = resource_path("database/init_db.sql")
 
     # Lire le fichier SQL
     with open(sql_path, "r", encoding="utf-8") as f:
