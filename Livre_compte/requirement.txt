@@ -5,6 +5,8 @@ charset-normalizer==3.4.4
 cryptography==46.0.3
 Jinja2==3.1.6
 MarkupSafe==3.0.3
+Nuitka==2.8.9
+ordered-set==4.1.0
 packaging==25.0
 pillow==12.0.0
 pycparser==2.23
@@ -16,3 +18,4 @@ PyQt6_sip==13.10.2
 qt-material==2.17
 reportlab==4.4.5
 setuptools==80.9.0
+zstandard==0.25.0
